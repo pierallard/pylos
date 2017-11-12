@@ -52,7 +52,8 @@
         <script>
             var conn = new WebSocket('ws://localhost:8080');
 
-            function update_possible_actions(actions) {
+            function update_clickable(actions) {
+                console.log(actions);
                 var bowls = document.getElementsByClassName('bowl');
                 for (var i = 0; i < bowls.length; ++i) {
                     var bowl = bowls[i];
@@ -61,7 +62,7 @@
                     var z = parseInt(bowl.dataset.z);
                     var found = false;
                     actions.forEach(function (action) {
-                        if (action[0] === x && action[1] === y && action[2] === z) {
+                        if (parseInt(action['x']) === x && parseInt(action['y']) === y && parseInt(action['z']) === z) {
                             found = true;
                         }
                     });
@@ -115,12 +116,15 @@
                         document.getElementById('message').innerHTML = 'Game joined! Waiting for players';
                     } else if (json.event === 'game_started') {
                         document.getElementById('message').innerHTML = 'Game started!';
-                    } else if (json.event === 'your_turn') {
-                        document.getElementById('message').innerHTML = 'Your turn to play';
-                        update_possible_actions(json.actions);
+                    } else if (json.event === 'pick_bowl') {
+                        document.getElementById('message').innerHTML = 'Please pick a bowl';
+                        update_clickable(json.actions);
+                    } else if (json.event === 'put_bowl') {
+                        document.getElementById('message').innerHTML = 'Please put the bowl';
+                        update_clickable(json.actions);
                     } else if (json.event === 'waiting') {
                         document.getElementById('message').innerHTML = 'Waiting for other player';
-                        update_possible_actions([]);
+                        update_clickable([]);
                     } else if (json.event === 'board_changed') {
                         update_board(json.board);
                     }
@@ -147,6 +151,8 @@
             }
         }
     }
+
     ?>
+    <div class="bowl" data-x="-1" data-y="-1" data-z="-1" style="left: 10px; top: 35px;">reserve</div>
     </body>
 </html>

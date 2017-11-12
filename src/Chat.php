@@ -30,22 +30,9 @@ class Chat implements MessageComponentInterface {
     public function onMessage(ConnectionInterface $from, $msg) {
         $game = $this->getGameOfPlayer($from);
         $game->doAction($from, json_decode($msg));
-
-//        $numRecv = count($this->clients) - 1;
-//        echo sprintf('Connection %d sending message "%s" to %d other connection%s' . "\n"
-//            , $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
-//
-//        foreach ($this->clients as $client) {
-//            if ($from !== $client) {
-//                $client->send($msg);
-//            }
-//        }
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e) {
-//        echo "An error has occurred: {$e->getMessage()}\n";
-//
-//        $conn->close();
     }
 
     private function getOrCreateGame(): Game

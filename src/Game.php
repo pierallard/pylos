@@ -8,7 +8,8 @@ class Game
 {
     private const MAX_PLAYERS = 2;
     private const STATE_WAITING = 'waiting';
-    private const STATE_STARTED = 'started';
+    private const STATE_PICK_BOWL = 'pick_bowl';
+    private const STATE_PUT_BOWL = 'put_bowl';
 
     /** @var Board */
     private $board;
@@ -18,6 +19,9 @@ class Game
 
     /** @var ConnectionInterface */
     private $currentPlayer = null;
+
+    /** @var array */
+    private $currentBowl = null;
 
     public function __construct()
     {
@@ -56,7 +60,7 @@ class Game
 
     private function start()
     {
-        $this->state = self::STATE_STARTED;
+        $this->state = self::STATE_PICK_BOWL;
         $this->currentPlayer = $this->players[0];
 
         foreach ($this->players as $player) {
@@ -69,7 +73,18 @@ class Game
     private function sendState()
     {
         echo "Send your turn to " . $this->getPlayerId($this->currentPlayer) . "\n";
-        $this->currentPlayer->send(json_encode(['event' => 'your_turn', 'actions' => $this->getActions()]));
+        if ($this->state === self::STATE_PICK_BOWL) {
+            $this->currentPlayer->send(json_encode([
+                'event' => 'pick_bowl',
+                'actions' => $this->board->getAvailableBowls($this->getPlayerId($this->currentPlayer))
+            ]));
+        } else {
+            $this->currentPlayer->send(json_encode([
+                'event' => 'put_bowl',
+                'actions' => $this->board->getAvailablePositions($this->currentBowl)
+            ]));
+        }
+
         $others = array_filter($this->players, function ($player) {
             return $player !== $this->currentPlayer;
         });
@@ -82,19 +97,28 @@ class Game
         }
     }
 
-    private function getActions()
-    {
-        return $this->board->getAvailablePositions();
-    }
-
     public function doAction($player, $position)
     {
-        $this->board->addBowl($this->getPlayerId($player), $position);
+        if ($this->state === self::STATE_PICK_BOWL) {
+            if (intval($position->x) !== -1) {
+                $this->currentBowl = $position;
+            } else {
+                $this->currentBowl = null;
+            }
+            $this->state = self::STATE_PUT_BOWL;
+        } else {
+            if ($this->currentBowl !== null) {
+                $this->board->moveBowl($this->currentBowl, $position);
+            } else {
+                $this->board->addBowl($this->getPlayerId($player), $position);
+            }
+            $this->state = self::STATE_PICK_BOWL;
 
-        $others = array_filter($this->players, function ($player) {
-            return $player !== $this->currentPlayer;
-        });
-        $this->currentPlayer = current($others);
+            $others = array_filter($this->players, function ($player) {
+                return $player !== $this->currentPlayer;
+            });
+            $this->currentPlayer = current($others);
+        }
 
         $this->sendState();
     }
