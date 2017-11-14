@@ -1,7 +1,10 @@
 <?php
 
-namespace MyApp;
+namespace Pylos;
 
+use Pylos\Actions\ActionInterface;
+use Pylos\Actions\ActionPick;
+use Pylos\Actions\ActionPut;
 use Ratchet\ConnectionInterface;
 
 class Game

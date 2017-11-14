@@ -1,6 +1,9 @@
 <?php
 
-namespace MyApp;
+namespace Pylos;
+
+use Pylos\Actions\ActionPick;
+use Pylos\Actions\ActionPut;
 
 class Board
 {
@@ -108,10 +111,5 @@ class Board
             ($this->bowlAt($x - 1, $y, $z + 1) !== null) ||
             ($this->bowlAt($x, $y - 1, $z + 1) !== null) ||
             ($this->bowlAt($x, $y, $z + 1) !== null));
-    }
-
-    public function moveBowl($currentBowl, $position)
-    {
-        $this->addBowl($this->removeBowl($currentBowl), $position);
     }
 }

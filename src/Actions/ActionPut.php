@@ -1,6 +1,8 @@
 <?php
 
-namespace MyApp;
+namespace Pylos\Actions;
+
+use Pylos\Board;
 
 class ActionPut implements ActionInterface
 {

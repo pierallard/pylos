@@ -1,6 +1,6 @@
 <?php
 
-namespace MyApp;
+namespace Pylos;
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
