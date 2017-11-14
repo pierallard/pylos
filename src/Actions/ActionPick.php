@@ -7,7 +7,7 @@ use Pylos\Board;
 class ActionPick implements ActionInterface
 {
     public const NAME = 'pick_bowl';
-    private const BOARD_PICK = -1;
+    public const BOARD_PICK = -1;
 
     private $playerId;
     private $x;
@@ -32,6 +32,7 @@ class ActionPick implements ActionInterface
         if (!$this->isBoardPick()) {
             $board->removeBowl($this->x, $this->y, $this->z);
         }
+        $board->setPickedBowlZ($this->z);
     }
 
     public function undo(Board &$board): void

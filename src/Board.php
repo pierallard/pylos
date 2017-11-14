@@ -8,6 +8,7 @@ use Pylos\Actions\ActionPut;
 class Board
 {
     private $positions;
+    private $pickedBowlZ;
     private const SIZE = 4;
 
     public function __construct()
@@ -89,10 +90,12 @@ class Board
         foreach (array_keys($this->positions) as $position) {
             [$x, $y, $z] = unserialize($position);
             if ($this->positions[$position] === null) {
-                if ($z === 0) {
-                    $result[] = new ActionPut($playerId, $x, $y, $z);
-                } else if ($this->isBowlUnder($x, $y, $z)) {
-                    $result[] = new ActionPut($playerId, $x, $y, $z);
+                if ($this->pickedBowlZ === ActionPick::BOARD_PICK || $this->pickedBowlZ < $z) {
+                    if ($z === 0) {
+                        $result[] = new ActionPut($playerId, $x, $y, $z);
+                    } else if ($this->isBowlUnder($x, $y, $z)) {
+                        $result[] = new ActionPut($playerId, $x, $y, $z);
+                    }
                 }
             }
         }
@@ -111,5 +114,10 @@ class Board
             ($this->bowlAt($x - 1, $y, $z + 1) !== null) ||
             ($this->bowlAt($x, $y - 1, $z + 1) !== null) ||
             ($this->bowlAt($x, $y, $z + 1) !== null));
+    }
+
+    public function setPickedBowlZ(?int $z)
+    {
+        $this->pickedBowlZ = $z;
     }
 }
