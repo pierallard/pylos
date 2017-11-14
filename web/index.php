@@ -50,27 +50,33 @@
             }
         </style>
         <script>
-            var conn = new WebSocket('ws://localhost:8080');
+            let conn = new WebSocket('ws://localhost:8080');
 
             function update_clickable(actions) {
                 console.log(actions);
-                var bowls = document.getElementsByClassName('bowl');
-                for (var i = 0; i < bowls.length; ++i) {
-                    var bowl = bowls[i];
-                    var x = parseInt(bowl.dataset.x);
-                    var y = parseInt(bowl.dataset.y);
-                    var z = parseInt(bowl.dataset.z);
-                    var found = false;
+                const bowls = document.getElementsByClassName('bowl');
+                for (let i = 0; i < bowls.length; ++i) {
+                    const bowl = bowls[i];
+                    const x = parseInt(bowl.dataset.x);
+                    const y = parseInt(bowl.dataset.y);
+                    const z = parseInt(bowl.dataset.z);
+
+                    let foundAction = null;
                     actions.forEach(function (action) {
                         if (parseInt(action['x']) === x && parseInt(action['y']) === y && parseInt(action['z']) === z) {
-                            found = true;
+                            foundAction = action;
                         }
                     });
 
-                    if (found) {
+                    if (null !== foundAction) {
                         bowl.classList.add('bowl--possible');
                         bowl.onclick = function (e) {
-                            conn.send(JSON.stringify({ x: e.target.dataset.x, y: e.target.dataset.y, z: e.target.dataset.z }));
+                            conn.send(JSON.stringify({
+                                action: foundAction['action'],
+                                x: e.target.dataset.x,
+                                y: e.target.dataset.y,
+                                z: e.target.dataset.z
+                            }));
                         }
                     } else {
                         bowl.classList.remove('bowl--possible');
@@ -80,12 +86,12 @@
             }
 
             function update_board(board) {
-                var bowls = document.getElementsByClassName('bowl');
-                for (var i = 0; i < bowls.length; ++i) {
-                    var bowl = bowls[i];
-                    var x = parseInt(bowl.dataset.x);
-                    var y = parseInt(bowl.dataset.y);
-                    var z = parseInt(bowl.dataset.z);
+                const bowls = document.getElementsByClassName('bowl');
+                for (let i = 0; i < bowls.length; ++i) {
+                    const bowl = bowls[i];
+                    const x = parseInt(bowl.dataset.x);
+                    const y = parseInt(bowl.dataset.y);
+                    const z = parseInt(bowl.dataset.z);
                     board.forEach(function (item) {
                         if ((item['x'] === x) && (item['y'] === y) && (item['z'] === z)) {
                             if (item['value'] === null) {
@@ -116,11 +122,8 @@
                         document.getElementById('message').innerHTML = 'Game joined! Waiting for players';
                     } else if (json.event === 'game_started') {
                         document.getElementById('message').innerHTML = 'Game started!';
-                    } else if (json.event === 'pick_bowl') {
-                        document.getElementById('message').innerHTML = 'Please pick a bowl';
-                        update_clickable(json.actions);
-                    } else if (json.event === 'put_bowl') {
-                        document.getElementById('message').innerHTML = 'Please put the bowl';
+                    } else if (json.event === 'possible_actions') {
+                        document.getElementById('message').innerHTML = 'Your turn';
                         update_clickable(json.actions);
                     } else if (json.event === 'waiting') {
                         document.getElementById('message').innerHTML = 'Waiting for other player';

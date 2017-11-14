@@ -20,9 +20,6 @@ class Game
     /** @var ConnectionInterface */
     private $currentPlayer = null;
 
-    /** @var array */
-    private $currentBowl = null;
-
     public function __construct()
     {
         $this->state = self::STATE_WAITING;
@@ -75,13 +72,17 @@ class Game
         echo "Send your turn to " . $this->getPlayerId($this->currentPlayer) . "\n";
         if ($this->state === self::STATE_PICK_BOWL) {
             $this->currentPlayer->send(json_encode([
-                'event' => 'pick_bowl',
-                'actions' => $this->board->getAvailableBowls($this->getPlayerId($this->currentPlayer))
+                'event' => 'possible_actions',
+                'actions' => $this->normalizeActions(
+                    $this->board->getPickActions($this->getPlayerId($this->currentPlayer))
+                )
             ]));
         } else {
             $this->currentPlayer->send(json_encode([
-                'event' => 'put_bowl',
-                'actions' => $this->board->getAvailablePositions($this->currentBowl)
+                'event' => 'possible_actions',
+                'actions' => $this->normalizeActions(
+                    $this->board->getPutActions($this->getPlayerId($this->currentPlayer))
+                )
             ]));
         }
 
@@ -97,34 +98,52 @@ class Game
         }
     }
 
-    public function doAction($player, $position)
+    public function doAction($player, $action)
     {
+        if ($player !== $this->currentPlayer) {
+            return;
+        }
+        $action = $this->parseAction($action, $this->getPlayerId($this->currentPlayer));
+        $action->do($this->board);
+
         if ($this->state === self::STATE_PICK_BOWL) {
-            if (intval($position->x) !== -1) {
-                $this->currentBowl = $position;
-            } else {
-                $this->currentBowl = null;
-            }
             $this->state = self::STATE_PUT_BOWL;
         } else {
-            if ($this->currentBowl !== null) {
-                $this->board->moveBowl($this->currentBowl, $position);
-            } else {
-                $this->board->addBowl($this->getPlayerId($player), $position);
-            }
             $this->state = self::STATE_PICK_BOWL;
-
-            $others = array_filter($this->players, function ($player) {
-                return $player !== $this->currentPlayer;
-            });
-            $this->currentPlayer = current($others);
+            $this->switchPlayer();
         }
 
         $this->sendState();
     }
 
+    private function switchPlayer()
+    {
+        $others = array_filter($this->players, function ($player) {
+            return $player !== $this->currentPlayer;
+        });
+        $this->currentPlayer = current($others);
+    }
+
     private function getPlayerId($player)
     {
         return array_search($player, $this->players);
+    }
+
+    private function normalizeActions(array $actions): array
+    {
+        return array_map(function (ActionInterface $action) {
+            return $action->normalize();
+        }, $actions);
+    }
+
+    private function parseAction($action, $playerId)
+    {
+        if ($action->action === ActionPick::NAME) {
+            return new ActionPick($playerId, intval($action->x), intval($action->y), intval($action->z));
+        } else if ($action->action === ActionPut::NAME) {
+            return new ActionPut($playerId, intval($action->x), intval($action->y), intval($action->z));
+        }
+
+        throw new \Exception(sprintf('Invalid action type: "%s"', $action->action));
     }
 }

@@ -31,24 +31,6 @@ class Board
         return ['x' => $x, 'y' => $y, 'z' => $z, 'value' => $this->bowlAt($x, $y, $z)];
     }
 
-    public function getAvailablePositions($currentBowl)
-    {
-        $result = [];
-        foreach (array_keys($this->positions) as $position) {
-            [$x, $y, $z] = unserialize($position);
-            if ($this->positions[$position] === null) {
-                if (($currentBowl === null) || ($z > $currentBowl->z)) {
-                    if ($z === 0) {
-                        $result[] = $this->normalizeBowl($x, $y, $z);
-                    } else if ($this->isBowlUnder($x, $y, $z)) {
-                        $result[] = $this->normalizeBowl($x, $y, $z);
-                    }
-                }
-            }
-        }
-
-        return $result;
-    }
 
     private function isBowlUnder($x, $y, $z) {
         return (($this->bowlAt($x, $y, $z - 1) !== null)
@@ -57,15 +39,15 @@ class Board
             && ($this->bowlAt($x, $y + 1, $z - 1) !== null));
     }
 
-    public function addBowl($playerId, $position)
+    public function addBowl($playerId, $x, $y, $z)
     {
-        $this->positions[serialize([intval($position->x), intval($position->y), intval($position->z)])] = $playerId;
+        $this->positions[serialize([$x, $y, $z])] = $playerId;
     }
 
-    public function removeBowl($position)
+    public function removeBowl($x, $y, $z)
     {
-        $result = $this->positions[serialize([intval($position->x), intval($position->y), intval($position->z)])];
-        $this->positions[serialize([intval($position->x), intval($position->y), intval($position->z)])] = null;
+        $result = $this->bowlAt($x, $y, $z);
+        $this->positions[serialize([$x, $y, $z])] = null;
 
         return $result;
     }
@@ -81,16 +63,33 @@ class Board
         return $result;
     }
 
-    public function getAvailableBowls($playerId)
+    public function getPickActions($playerId)
     {
         $result = [];
-        $result[] = $this->normalizeBowl(-1, -1, -1);
+        $result[] = ActionPick::createBoardPick($playerId);
         foreach (array_keys($this->positions) as $position) {
             [$x, $y, $z] = unserialize($position);
             if ($this->positions[$position] !== null) {
                 if (($this->bowlAt($x, $y, $z) === $playerId) &&
                     ($this->isMovable($x, $y, $z))) {
-                    $result[] = $this->normalizeBowl($x, $y, $z);
+                    $result[] = new ActionPick($playerId, $x, $y, $z);
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    public function getPutActions($playerId)
+    {
+        $result = [];
+        foreach (array_keys($this->positions) as $position) {
+            [$x, $y, $z] = unserialize($position);
+            if ($this->positions[$position] === null) {
+                if ($z === 0) {
+                    $result[] = new ActionPut($playerId, $x, $y, $z);
+                } else if ($this->isBowlUnder($x, $y, $z)) {
+                    $result[] = new ActionPut($playerId, $x, $y, $z);
                 }
             }
         }
