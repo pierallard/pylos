@@ -5,6 +5,7 @@ namespace Pylos;
 use Pylos\Actions\ActionInterface;
 use Pylos\Actions\ActionPick;
 use Pylos\Actions\ActionPut;
+use Pylos\Actions\UndoAction;
 use Ratchet\ConnectionInterface;
 
 class Game
@@ -23,11 +24,15 @@ class Game
     /** @var ConnectionInterface */
     private $currentPlayer = null;
 
+    /** @var ActionInterface[] */
+    private $actions;
+
     public function __construct()
     {
         $this->state = self::STATE_WAITING;
         $this->board = new Board();
         $this->players = [];
+        $this->actions = [];
     }
 
     public function addPlayer(ConnectionInterface $player)
@@ -73,6 +78,11 @@ class Game
     private function sendState()
     {
         echo "Send your turn to " . $this->getPlayerId($this->currentPlayer) . "\n";
+        // TODO Better namage this method, by
+        // - Setting the state to the board
+        // - Asking directly to the board all the possible actions
+        // - Filter for the players here to send only his actions.
+        
         if ($this->state === self::STATE_PICK_BOWL) {
             $this->currentPlayer->send(json_encode([
                 'event' => 'possible_actions',
@@ -84,7 +94,10 @@ class Game
             $this->currentPlayer->send(json_encode([
                 'event' => 'possible_actions',
                 'actions' => $this->normalizeActions(
-                    $this->board->getPutActions($this->getPlayerId($this->currentPlayer))
+                    array_merge(
+                        $this->board->getPutActions($this->getPlayerId($this->currentPlayer)),
+                        [new UndoAction(end($this->actions))]
+                    )
                 )
             ]));
         }
@@ -104,10 +117,15 @@ class Game
     public function doAction($player, $action)
     {
         if ($player !== $this->currentPlayer) {
+            echo "Error ! Player not current try to play.";
             return;
         }
+        echo "Parsing ";
+        var_dump($action);
+
         $action = $this->parseAction($action, $this->getPlayerId($this->currentPlayer));
         $action->do($this->board);
+        $this->actions[] = $action;
 
         if ($this->state === self::STATE_PICK_BOWL) {
             $this->state = self::STATE_PUT_BOWL;
@@ -145,6 +163,8 @@ class Game
             return new ActionPick($playerId, intval($action->x), intval($action->y), intval($action->z));
         } else if ($action->action === ActionPut::NAME) {
             return new ActionPut($playerId, intval($action->x), intval($action->y), intval($action->z));
+        } else if ($action->action === UndoAction::NAME) {
+            return new UndoAction(end($this->actions));
         }
 
         throw new \Exception(sprintf('Invalid action type: "%s"', $action->action));

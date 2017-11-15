@@ -48,12 +48,22 @@
                 display: block;
                 background: darkred;
             }
+
+            #undo {
+                float: right;
+            }
+
+            #undo.hidden {
+                display: none;
+            }
         </style>
         <script>
             let conn = new WebSocket('ws://localhost:8080');
 
             function update_clickable(actions) {
                 console.log(actions);
+
+                // Update bowls
                 const bowls = document.getElementsByClassName('bowl');
                 for (let i = 0; i < bowls.length; ++i) {
                     const bowl = bowls[i];
@@ -82,6 +92,26 @@
                         bowl.classList.remove('bowl--possible');
                         bowl.onclick = null;
                     }
+                }
+
+                // Update cancel
+                let found = false;
+                actions.forEach(function (action) {
+                    if (action['action'] === 'undo') {
+                        found = true;
+                    }
+                });
+                let undo = document.getElementById('undo');
+                if (found) {
+                    undo.classList.remove('hidden');
+                    undo.onclick = function (e) {
+                        conn.send(JSON.stringify({
+                            action: 'undo'
+                        }));
+                    };
+                } else {
+                    undo.classList.add('hidden');
+                    undo.onclick = null;
                 }
             }
 
@@ -145,6 +175,7 @@
     </head>
     <body>
     <div id="message"></div>
+    <div id="undo" class="hidden">Undo !</div>
     <?php
 
     for ($z = 0; $z < SIZE; $z++) {
