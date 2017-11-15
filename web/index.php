@@ -93,16 +93,14 @@
                         bowl.onclick = null;
                     }
                 }
+            }
 
-                // Update cancel
-                let found = false;
-                actions.forEach(function (action) {
-                    if (action['action'] === 'undo') {
-                        found = true;
-                    }
-                });
+            function update_undo(value) {
+                console.log(value);
+                // Update undo
+
                 let undo = document.getElementById('undo');
-                if (found) {
+                if (value) {
                     undo.classList.remove('hidden');
                     undo.onclick = function (e) {
                         conn.send(JSON.stringify({
@@ -153,6 +151,8 @@
                     } else if (json.event === 'possible_actions') {
                         document.getElementById('message').innerHTML = 'Your turn';
                         update_clickable(json.actions);
+                    } else if (json.event === 'update_undo') {
+                        update_undo(json.value);
                     } else if (json.event === 'waiting') {
                         document.getElementById('message').innerHTML = 'Waiting for other player';
                         update_clickable([]);

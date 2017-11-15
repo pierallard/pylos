@@ -5,7 +5,6 @@ namespace Pylos;
 use Pylos\Actions\ActionInterface;
 use Pylos\Actions\ActionPick;
 use Pylos\Actions\ActionPut;
-use Pylos\Actions\UndoAction;
 
 class Board
 {
@@ -147,10 +146,7 @@ class Board
         if ($this->state === self::STATE_PICK_BOWL) {
             return $this->getPickActions($this->currentPlayerId);
         } else {
-            return array_merge(
-                $this->getPutActions($this->currentPlayerId),
-                [new UndoAction($this->currentPlayerId)]
-            );
+            return $this->getPutActions($this->currentPlayerId);
         }
     }
 
@@ -167,5 +163,10 @@ class Board
     public function getCurrentPlayerId()
     {
         return $this->currentPlayerId;
+    }
+
+    public function canUndo($playerId)
+    {
+        return $this->currentPlayerId === $playerId && $this->state === self::STATE_PUT_BOWL;
     }
 }

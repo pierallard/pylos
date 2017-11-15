@@ -29,7 +29,12 @@ class Chat implements MessageComponentInterface {
 
     public function onMessage(ConnectionInterface $from, $msg) {
         $game = $this->getGameOfPlayer($from);
-        $game->doAction($from, json_decode($msg));
+        $message = json_decode($msg);
+        if ($message->action !== 'undo') {
+            $game->doAction($from, json_decode($msg));
+        } else {
+            $game->undo();
+        }
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e) {

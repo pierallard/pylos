@@ -42,6 +42,8 @@ class ActionPick implements ActionInterface
         if (!$this->isBoardPick()) {
             $board->addBowl($this->playerId, $this->x, $this->y, $this->z);
         }
+
+        $board->setState(Board::STATE_PICK_BOWL);
     }
 
     public function normalize(): array

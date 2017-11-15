@@ -5,7 +5,6 @@ namespace Pylos;
 use Pylos\Actions\ActionInterface;
 use Pylos\Actions\ActionPick;
 use Pylos\Actions\ActionPut;
-use Pylos\Actions\UndoAction;
 use Ratchet\ConnectionInterface;
 
 class Game
@@ -78,10 +77,14 @@ class Game
         }
 
         foreach (array_keys($this->players) as $playerId) {
-            $playerActions = isset($actions[$playerId]) ? $actions[$playerId] : [];
             $this->getPlayer($playerId)->send(json_encode([
                 'event' => 'possible_actions',
-                'actions' => $this->normalizeActions($playerActions)
+                'actions' => $this->normalizeActions(isset($actions[$playerId]) ? $actions[$playerId] : [])
+            ]));
+
+            $this->getPlayer($playerId)->send(json_encode([
+                'event' => 'update_undo',
+                'value' => $this->board->canUndo($playerId)
             ]));
         }
 
@@ -124,8 +127,6 @@ class Game
             return new ActionPick($playerId, intval($action->x), intval($action->y), intval($action->z));
         } else if ($action->action === ActionPut::NAME) {
             return new ActionPut($playerId, intval($action->x), intval($action->y), intval($action->z));
-        } else if ($action->action === UndoAction::NAME) {
-            return new UndoAction(end($this->actions));
         }
 
         throw new \Exception(sprintf('Invalid action type: "%s"', $action->action));
@@ -139,5 +140,12 @@ class Game
     private function getPlayer($playerId)
     {
         return $this->players[$playerId];
+    }
+
+    public function undo()
+    {
+        $lastAction = array_pop($this->actions);
+        $lastAction->undo($this->board);
+        $this->sendState();
     }
 }
