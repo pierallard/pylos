@@ -30,7 +30,7 @@ class Game
 
     public function addPlayer(ConnectionInterface $player)
     {
-        $player->send(json_encode(['event' => 'game_joined']));
+        $player->send(json_encode(['event' => Event::GAME_JOINED]));
 
         $this->players[] = $player;
 
@@ -79,19 +79,19 @@ class Game
 
         foreach (array_keys($this->players) as $playerId) {
             $this->getPlayer($playerId)->send(json_encode([
-                'event' => 'possible_actions',
+                'event' => Event::ACTIONS,
                 'actions' => $this->normalizeActions(isset($actions[$playerId]) ? $actions[$playerId] : [])
             ]));
 
             $this->getPlayer($playerId)->send(json_encode([
-                'event' => 'update_undo',
+                'event' => Event::UPDATE_UNDO,
                 'value' => $this->board->canUndo($playerId)
             ]));
         }
 
         $normalizedBoard = $this->board->normalize();
         foreach ($this->players as $player) {
-            $player->send(json_encode(['event' => 'board_changed', 'board' => $normalizedBoard]));
+            $player->send(json_encode(['event' => Event::BOARD, 'board' => $normalizedBoard]));
         }
     }
 

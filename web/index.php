@@ -1,14 +1,13 @@
 <html>
     <?php
     const BOWL_SIZE = 100;
-    const SIZE = 4;
 
     function getLeft($x, $y, $z) {
         return $x * BOWL_SIZE * 0.8 + $y * BOWL_SIZE * 0.6 + ($z) * BOWL_SIZE * 0.7;
     }
 
     function getTop($x, $y, $z) {
-        return (SIZE - $z + 1) * BOWL_SIZE * 0.65 + $x * BOWL_SIZE * 0.3 - $y * BOWL_SIZE * 0.3;
+        return (\Pylos\Board::SIZE - $z + 1) * BOWL_SIZE * 0.65 + $x * BOWL_SIZE * 0.3 - $y * BOWL_SIZE * 0.3;
     }
 
     function getZindex($x, $y, $z) {
@@ -61,9 +60,6 @@
             let conn = new WebSocket('ws://localhost:8080');
 
             function update_clickable(actions) {
-                console.log(actions);
-
-                // Update bowls
                 const bowls = document.getElementsByClassName('bowl');
                 for (let i = 0; i < bowls.length; ++i) {
                     const bowl = bowls[i];
@@ -96,9 +92,6 @@
             }
 
             function update_undo(value) {
-                console.log(value);
-                // Update undo
-
                 let undo = document.getElementById('undo');
                 if (value) {
                     undo.classList.remove('hidden');
@@ -137,41 +130,26 @@
                 }
             }
 
-            conn.onopen = function(e) {
-                console.log("Connection established!");
-            };
+            function log(message) {
+                document.getElementById('message').innerHTML = message;
+            }
 
             conn.onmessage = function(e) {
                 const json = JSON.parse(e.data);
                 if (json.event) {
-                    if (json.event === 'connected') {
-                        document.getElementById('message').innerHTML = 'Connected!';
-                    } else if (json.event === 'game_joined') {
-                        document.getElementById('message').innerHTML = 'Game joined! Waiting for players';
-                    } else if (json.event === 'possible_actions') {
-                        if (json.actions.length > 0) {
-                            document.getElementById('message').innerHTML = 'Your turn';
-                        } else {
-                            document.getElementById('message').innerHTML = 'Wait for your turn!';
-                        }
+                    if (json.event === '<?php echo \Pylos\Event::CONNECTED; ?>') {
+                        log('Connected!');
+                    } else if (json.event === '<?php echo \Pylos\Event::GAME_JOINED; ?>') {
+                        log('Game joined! Waiting for players');
+                    } else if (json.event === '<?php echo \Pylos\Event::ACTIONS; ?>') {
+                        log(json.actions.length > 0 ? 'Your turn' : 'Wait for your turn!');
                         update_clickable(json.actions);
-                    } else if (json.event === 'update_undo') {
+                    } else if (json.event === '<?php echo \Pylos\Event::UPDATE_UNDO; ?>') {
                         update_undo(json.value);
-                    } else if (json.event === 'waiting') {
-                        document.getElementById('message').innerHTML = 'Waiting for other player';
-                        update_clickable([]);
-                    } else if (json.event === 'board_changed') {
+                    } else if (json.event === '<?php echo \Pylos\Event::BOARD; ?>') {
                         update_board(json.board);
                     }
-                    console.log('event ! ' + json.event);
                 }
-                else {
-                    console.log('Message received! ' + e.data);
-                }
-            };
-
-            conn.onerror = function () {
-                console.log('Error');
             };
         </script>
     </head>
@@ -180,9 +158,9 @@
     <div id="undo" class="hidden">Undo !</div>
     <?php
 
-    for ($z = 0; $z < SIZE; $z++) {
-        for ($x = 0; $x < SIZE - $z; $x++) {
-            for ($y = 0; $y < SIZE - $z; $y++) {
+    for ($z = 0; $z < \Pylos\Board::SIZE; $z++) {
+        for ($x = 0; $x < \Pylos\Board::SIZE - $z; $x++) {
+            for ($y = 0; $y < \Pylos\Board::SIZE - $z; $y++) {
                 echo(sprintf('<div class="bowl" data-x="%d" data-y="%d" data-z="%d" style="left:%dpx;top:%dpx;z-index:%d"></div>', $x, $y, $z, getLeft($x,$y,$z), getTop($x,$y,$z), getZindex($x, $y, $z)));
             }
         }

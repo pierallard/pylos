@@ -13,7 +13,7 @@ class Chat implements MessageComponentInterface {
     }
 
     public function onOpen(ConnectionInterface $conn) {
-        $conn->send(json_encode(['event' => 'connected']));
+        $conn->send(json_encode(['event' => Event::CONNECTED]));
         $game = $this->getOrCreateGame();
         $game->addPlayer($conn);
 
