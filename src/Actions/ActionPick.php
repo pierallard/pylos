@@ -4,23 +4,10 @@ namespace Pylos\Actions;
 
 use Pylos\Board;
 
-class ActionPick implements ActionInterface
+class ActionPick extends AbstractAction
 {
     public const NAME = 'pick_bowl';
     public const BOARD_PICK = -1;
-
-    private $playerId;
-    private $x;
-    private $y;
-    private $z;
-
-    public function __construct(int $playerId, int $x, int $y, int $z)
-    {
-        $this->playerId = $playerId;
-        $this->x = $x;
-        $this->y = $y;
-        $this->z = $z;
-    }
 
     public static function createBoardPick(int $playerId)
     {
@@ -46,23 +33,13 @@ class ActionPick implements ActionInterface
         $board->setState(Board::STATE_PICK_BOWL);
     }
 
-    public function normalize(): array
-    {
-        return [
-            'action' => self::NAME,
-            'x' => $this->x,
-            'y' => $this->y,
-            'z' => $this->z
-        ];
-    }
-
     private function isBoardPick(): bool
     {
         return $this->x === self::BOARD_PICK && $this->y === self::BOARD_PICK && $this->z === self::BOARD_PICK;
     }
 
-    public function getPlayerId(): int
+    function getName(): string
     {
-        return $this->playerId;
+        return self::NAME;
     }
 }

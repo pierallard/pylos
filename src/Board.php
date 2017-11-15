@@ -5,6 +5,7 @@ namespace Pylos;
 use Pylos\Actions\ActionInterface;
 use Pylos\Actions\ActionPick;
 use Pylos\Actions\ActionPut;
+use Pylos\Actions\ActionRemove;
 
 class Board
 {
@@ -12,6 +13,7 @@ class Board
     private const STATE_WAITING = 'waiting';
     public const STATE_PICK_BOWL = 'pick_bowl';
     public const STATE_PUT_BOWL = 'put_bowl';
+    public const STATE_REMOVE = 'remove';
 
     private $positions;
 
@@ -20,6 +22,8 @@ class Board
     private $state;
 
     private $currentPlayerId;
+
+    private $removeCounter;
 
     public function __construct()
     {
@@ -101,6 +105,21 @@ class Board
         return $result;
     }
 
+    public function getRemoveActions($playerId, $counter) {
+        $result = [];
+        foreach (array_keys($this->positions) as $position) {
+            [$x, $y, $z] =unserialize($position);
+            if ($this->positions[$position] !== null) {
+                if (($this->bowlAt($x, $y, $z) === $playerId) &&
+                    !$this->isSupport($x, $y, $z)) {
+                    $result[] = new ActionRemove($playerId, $x, $y, $z, $counter);
+                }
+            }
+        }
+
+        return $result;
+    }
+
     public function getPutActions($playerId)
     {
         $result = [];
@@ -145,8 +164,10 @@ class Board
     {
         if ($this->state === self::STATE_PICK_BOWL) {
             return $this->getPickActions($this->currentPlayerId);
-        } else {
+        } else if ($this->state === self::STATE_PUT_BOWL) {
             return $this->getPutActions($this->currentPlayerId);
+        } else if ($this->state === self::STATE_REMOVE) {
+            return $this->getRemoveActions($this->currentPlayerId, 2);
         }
     }
 
@@ -167,6 +188,41 @@ class Board
 
     public function canUndo($playerId)
     {
-        return $this->currentPlayerId === $playerId && $this->state === self::STATE_PUT_BOWL;
+        return (
+            $this->currentPlayerId === $playerId &&
+            (
+                ($this->state === self::STATE_PUT_BOWL) ||
+                ($this->state === self::STATE_REMOVE)
+            )
+        );
+    }
+
+    public function isSquare($playerId)
+    {
+        for ($z = 0; $z < self::SIZE - 1; $z++) {
+            for ($x = 0; $x < self::SIZE - $z - 1; $x++) {
+                for ($y = 0; $y < self::SIZE - $z - 1; $y++) {
+                    $color = $this->bowlAt($x, $y, $z);
+                    if (($color !== null) &&
+                        ($color === $this->bowlAt($x + 1, $y, $z)) &&
+                        ($color === $this->bowlAt($x, $y + 1, $z)) &&
+                        ($color === $this->bowlAt($x + 1, $y + 1, $z))) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public function setRemoveCounter($counter)
+    {
+        $this->removeCounter = $counter;
+    }
+
+    public function getRemoveCounter()
+    {
+        return $this->removeCounter;
     }
 }

@@ -5,6 +5,7 @@ namespace Pylos;
 use Pylos\Actions\ActionInterface;
 use Pylos\Actions\ActionPick;
 use Pylos\Actions\ActionPut;
+use Pylos\Actions\ActionRemove;
 use Ratchet\ConnectionInterface;
 
 class Game
@@ -127,6 +128,8 @@ class Game
             return new ActionPick($playerId, intval($action->x), intval($action->y), intval($action->z));
         } else if ($action->action === ActionPut::NAME) {
             return new ActionPut($playerId, intval($action->x), intval($action->y), intval($action->z));
+        } else if ($action->action === ActionRemove::NAME) {
+            return new ActionRemove($playerId, intval($action->x), intval($action->y), intval($action->z));
         }
 
         throw new \Exception(sprintf('Invalid action type: "%s"', $action->action));

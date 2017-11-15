@@ -4,48 +4,32 @@ namespace Pylos\Actions;
 
 use Pylos\Board;
 
-class ActionPut implements ActionInterface
+class ActionPut extends AbstractAction
 {
     public const NAME = 'put_bowl';
-
-    private $playerId;
-    private $x;
-    private $y;
-    private $z;
-
-    public function __construct(int $playerId, int $x, int $y, int $z)
-    {
-        $this->playerId = $playerId;
-        $this->x = $x;
-        $this->y = $y;
-        $this->z = $z;
-    }
 
     public function do(Board &$board): void
     {
         $board->addBowl($this->playerId, $this->x, $this->y, $this->z);
 
-        $board->setState(Board::STATE_PICK_BOWL);
-        $board->switchPlayer();
+        if ($board->isSquare($this->playerId)) {
+            $board->setState(Board::STATE_REMOVE);
+            $board->setRemoveCounter(2);
+        } else {
+            $board->setState(Board::STATE_PICK_BOWL);
+            $board->switchPlayer();
+        }
     }
 
     public function undo(Board &$board): void
     {
         $board->removeBowl($this->x, $this->y, $this->z);
+        
+        $board->setState(Board::STATE_PICK_BOWL);
     }
 
-    public function normalize(): array
+    function getName(): string
     {
-        return [
-            'action' => self::NAME,
-            'x' => $this->x,
-            'y' => $this->y,
-            'z' => $this->z
-        ];
-    }
-
-    public function getPlayerId(): int
-    {
-        return $this->playerId;
+        return self::NAME;
     }
 }
