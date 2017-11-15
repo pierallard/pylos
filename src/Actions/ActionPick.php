@@ -14,7 +14,7 @@ class ActionPick extends AbstractAction
         return new ActionPick($playerId, self::BOARD_PICK, self::BOARD_PICK, self::BOARD_PICK);
     }
 
-    public function do(Board &$board): void
+    public function do(Board &$board): bool
     {
         if (!$this->isBoardPick()) {
             $board->removeBowl($this->x, $this->y, $this->z);
@@ -22,6 +22,8 @@ class ActionPick extends AbstractAction
         $board->setPickedBowlZ($this->z);
 
         $board->setState(Board::STATE_PUT_BOWL);
+
+        return false;
     }
 
     public function undo(Board &$board): void

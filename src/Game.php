@@ -104,10 +104,13 @@ class Game
         }
 
         $action = $this->parseAction($action, $this->board->getCurrentPlayerId());
-        $action->do($this->board);
+        $finished = $action->do($this->board);
         $this->actions[] = $action;
-
         $this->sendState();
+
+        if ($finished) {
+            exit('finished!');
+        }
     }
 
     private function getPlayerId($player)

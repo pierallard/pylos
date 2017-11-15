@@ -6,7 +6,7 @@ use Pylos\Board;
 
 interface ActionInterface
 {
-    public function do(Board &$board);
+    public function do(Board &$board): bool;
 
     public function undo(Board &$board);
 

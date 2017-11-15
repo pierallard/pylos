@@ -8,7 +8,7 @@ class ActionRemove extends AbstractAction
 {
     public const NAME = 'remove';
 
-    public function do(Board &$board)
+    public function do(Board &$board): bool
     {
         $board->removeBowl($this->x, $this->y, $this->z);
 
@@ -18,6 +18,8 @@ class ActionRemove extends AbstractAction
             $board->setState(Board::STATE_PICK_BOWL);
             $board->switchPlayer();
         }
+
+        return false;
     }
 
     public function undo(Board &$board)

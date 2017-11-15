@@ -9,8 +9,9 @@ use Pylos\Actions\ActionRemove;
 
 class Board
 {
-    private const SIZE = 4;
     private const STATE_WAITING = 'waiting';
+
+    public const SIZE = 4;
     public const STATE_PICK_BOWL = 'pick_bowl';
     public const STATE_PUT_BOWL = 'put_bowl';
     public const STATE_REMOVE = 'remove';

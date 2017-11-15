@@ -149,7 +149,11 @@
                     } else if (json.event === 'game_joined') {
                         document.getElementById('message').innerHTML = 'Game joined! Waiting for players';
                     } else if (json.event === 'possible_actions') {
-                        document.getElementById('message').innerHTML = 'Your turn';
+                        if (json.actions.length > 0) {
+                            document.getElementById('message').innerHTML = 'Your turn';
+                        } else {
+                            document.getElementById('message').innerHTML = 'Wait for your turn!';
+                        }
                         update_clickable(json.actions);
                     } else if (json.event === 'update_undo') {
                         update_undo(json.value);
