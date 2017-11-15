@@ -8,22 +8,22 @@ class UndoAction implements ActionInterface
 {
     const NAME = 'undo';
 
-    /** @var ActionInterface */
-    protected $action;
+    /** @var int */
+    protected $playerId;
 
-    public function __construct(ActionInterface $action)
+    public function __construct($playerId)
     {
-        $this->action = $action;
+        $this->playerId = $playerId;
     }
 
     public function do(Board &$board)
     {
-        $this->action->undo($board);
+//        $this->action->undo($board);
     }
 
     public function undo(Board &$board)
     {
-        $this->action->do($board);
+//        $this->action->do($board);
     }
 
     public function normalize(): array
@@ -31,5 +31,10 @@ class UndoAction implements ActionInterface
         return [
             'action' => self::NAME
         ];
+    }
+
+    public function getPlayerId(): int
+    {
+        return $this->playerId;
     }
 }

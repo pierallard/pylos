@@ -2,14 +2,25 @@
 
 namespace Pylos;
 
+use Pylos\Actions\ActionInterface;
 use Pylos\Actions\ActionPick;
 use Pylos\Actions\ActionPut;
+use Pylos\Actions\UndoAction;
 
 class Board
 {
-    private $positions;
-    private $pickedBowlZ;
     private const SIZE = 4;
+    private const STATE_WAITING = 'waiting';
+    public const STATE_PICK_BOWL = 'pick_bowl';
+    public const STATE_PUT_BOWL = 'put_bowl';
+
+    private $positions;
+
+    private $pickedBowlZ;
+
+    private $state;
+
+    private $currentPlayerId;
 
     public function __construct()
     {
@@ -21,6 +32,13 @@ class Board
                 }
             }
         }
+
+        $this->state = self::STATE_WAITING;
+    }
+
+    public function start($currentPlayerId) {
+        $this->state = self::STATE_PICK_BOWL;
+        $this->currentPlayerId = $currentPlayerId;
     }
 
     private function bowlAt($x, $y, $z) {
@@ -119,5 +137,35 @@ class Board
     public function setPickedBowlZ(?int $z)
     {
         $this->pickedBowlZ = $z;
+    }
+
+    /**
+     * @return ActionInterface[]
+     */
+    public function getPossibleActions(): array
+    {
+        if ($this->state === self::STATE_PICK_BOWL) {
+            return $this->getPickActions($this->currentPlayerId);
+        } else {
+            return array_merge(
+                $this->getPutActions($this->currentPlayerId),
+                [new UndoAction($this->currentPlayerId)]
+            );
+        }
+    }
+
+    public function setState($state)
+    {
+        $this->state = $state;
+    }
+
+    public function switchPlayer()
+    {
+        $this->currentPlayerId = ($this->currentPlayerId + 1) % 2;
+    }
+
+    public function getCurrentPlayerId()
+    {
+        return $this->currentPlayerId;
     }
 }

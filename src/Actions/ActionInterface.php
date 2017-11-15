@@ -11,4 +11,6 @@ interface ActionInterface
     public function undo(Board &$board);
 
     public function normalize(): array;
+
+    public function getPlayerId(): int;
 }

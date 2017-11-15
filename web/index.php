@@ -150,8 +150,6 @@
                         document.getElementById('message').innerHTML = 'Connected!';
                     } else if (json.event === 'game_joined') {
                         document.getElementById('message').innerHTML = 'Game joined! Waiting for players';
-                    } else if (json.event === 'game_started') {
-                        document.getElementById('message').innerHTML = 'Game started!';
                     } else if (json.event === 'possible_actions') {
                         document.getElementById('message').innerHTML = 'Your turn';
                         update_clickable(json.actions);

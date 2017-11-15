@@ -11,9 +11,6 @@ use Ratchet\ConnectionInterface;
 class Game
 {
     private const MAX_PLAYERS = 2;
-    private const STATE_WAITING = 'waiting';
-    private const STATE_PICK_BOWL = 'pick_bowl';
-    private const STATE_PUT_BOWL = 'put_bowl';
 
     /** @var Board */
     private $board;
@@ -21,15 +18,11 @@ class Game
     /** @var ConnectionInterface[] */
     private $players;
 
-    /** @var ConnectionInterface */
-    private $currentPlayer = null;
-
     /** @var ActionInterface[] */
     private $actions;
 
     public function __construct()
     {
-        $this->state = self::STATE_WAITING;
         $this->board = new Board();
         $this->players = [];
         $this->actions = [];
@@ -65,48 +58,32 @@ class Game
 
     private function start()
     {
-        $this->state = self::STATE_PICK_BOWL;
-        $this->currentPlayer = $this->players[0];
-
-        foreach ($this->players as $player) {
-            $player->send(json_encode(['event' => 'game_started']));
-        }
+        $this->board->start($this->getPlayerId($this->players[0]));
 
         $this->sendState();
     }
 
     private function sendState()
     {
-        echo "Send your turn to " . $this->getPlayerId($this->currentPlayer) . "\n";
-        // TODO Better namage this method, by
-        // - Setting the state to the board
-        // - Asking directly to the board all the possible actions
-        // - Filter for the players here to send only his actions.
-        
-        if ($this->state === self::STATE_PICK_BOWL) {
-            $this->currentPlayer->send(json_encode([
-                'event' => 'possible_actions',
-                'actions' => $this->normalizeActions(
-                    $this->board->getPickActions($this->getPlayerId($this->currentPlayer))
-                )
-            ]));
-        } else {
-            $this->currentPlayer->send(json_encode([
-                'event' => 'possible_actions',
-                'actions' => $this->normalizeActions(
-                    array_merge(
-                        $this->board->getPutActions($this->getPlayerId($this->currentPlayer)),
-                        [new UndoAction(end($this->actions))]
-                    )
-                )
-            ]));
+        $possible_actions = $this->board->getPossibleActions();
+
+        $actions = [];
+        foreach ($possible_actions as $action) {
+            $playerId = $action->getPlayerId();
+            if (!isset($actions[$playerId])) {
+                $actions[$playerId] = [];
+            }
+
+            $actions[$playerId][] = $action;
         }
 
-        $others = array_filter($this->players, function ($player) {
-            return $player !== $this->currentPlayer;
-        });
-        echo "Send waiting to " . $this->getPlayerId(current($others)) . "\n";
-        current($others)->send(json_encode(['event' => 'waiting']));
+        foreach (array_keys($this->players) as $playerId) {
+            $playerActions = isset($actions[$playerId]) ? $actions[$playerId] : [];
+            $this->getPlayer($playerId)->send(json_encode([
+                'event' => 'possible_actions',
+                'actions' => $this->normalizeActions($playerActions)
+            ]));
+        }
 
         $normalizedBoard = $this->board->normalize();
         foreach ($this->players as $player) {
@@ -116,33 +93,17 @@ class Game
 
     public function doAction($player, $action)
     {
-        if ($player !== $this->currentPlayer) {
-            echo "Error ! Player not current try to play.";
+        if ($this->getPlayerId($player) !== $this->board->getCurrentPlayerId()) {
+            echo "Nope.";
+
             return;
         }
-        echo "Parsing ";
-        var_dump($action);
 
-        $action = $this->parseAction($action, $this->getPlayerId($this->currentPlayer));
+        $action = $this->parseAction($action, $this->board->getCurrentPlayerId());
         $action->do($this->board);
         $this->actions[] = $action;
 
-        if ($this->state === self::STATE_PICK_BOWL) {
-            $this->state = self::STATE_PUT_BOWL;
-        } else {
-            $this->state = self::STATE_PICK_BOWL;
-            $this->switchPlayer();
-        }
-
         $this->sendState();
-    }
-
-    private function switchPlayer()
-    {
-        $others = array_filter($this->players, function ($player) {
-            return $player !== $this->currentPlayer;
-        });
-        $this->currentPlayer = current($others);
     }
 
     private function getPlayerId($player)
@@ -168,5 +129,15 @@ class Game
         }
 
         throw new \Exception(sprintf('Invalid action type: "%s"', $action->action));
+    }
+
+    /**
+     * @param int $playerId
+     *
+     * @return ConnectionInterface
+     */
+    private function getPlayer($playerId)
+    {
+        return $this->players[$playerId];
     }
 }

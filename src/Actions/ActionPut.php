@@ -24,6 +24,9 @@ class ActionPut implements ActionInterface
     public function do(Board &$board): void
     {
         $board->addBowl($this->playerId, $this->x, $this->y, $this->z);
+
+        $board->setState(Board::STATE_PICK_BOWL);
+        $board->switchPlayer();
     }
 
     public function undo(Board &$board): void
@@ -39,5 +42,10 @@ class ActionPut implements ActionInterface
             'y' => $this->y,
             'z' => $this->z
         ];
+    }
+
+    public function getPlayerId(): int
+    {
+        return $this->playerId;
     }
 }

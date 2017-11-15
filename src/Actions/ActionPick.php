@@ -33,6 +33,8 @@ class ActionPick implements ActionInterface
             $board->removeBowl($this->x, $this->y, $this->z);
         }
         $board->setPickedBowlZ($this->z);
+
+        $board->setState(Board::STATE_PUT_BOWL);
     }
 
     public function undo(Board &$board): void
@@ -55,5 +57,10 @@ class ActionPick implements ActionInterface
     private function isBoardPick(): bool
     {
         return $this->x === self::BOARD_PICK && $this->y === self::BOARD_PICK && $this->z === self::BOARD_PICK;
+    }
+
+    public function getPlayerId(): int
+    {
+        return $this->playerId;
     }
 }
