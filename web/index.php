@@ -1,5 +1,8 @@
 <html>
     <?php
+
+    require_once('../vendor/autoload.php');
+
     const BOWL_SIZE = 100;
 
     function getLeft($x, $y, $z) {
